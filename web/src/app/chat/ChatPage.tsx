@@ -65,6 +65,7 @@ import { useChatContext } from "@/components/context/ChatContext";
 import { UserDropdown } from "@/components/UserDropdown";
 import { v4 as uuidv4 } from "uuid";
 import { orderAssistantsForUser } from "@/lib/assistants/orderAssistants";
+import { Button } from "@tremor/react";
 
 const MAX_INPUT_HEIGHT = 200;
 const TEMP_USER_MESSAGE_ID = -1;
@@ -92,6 +93,7 @@ export function ChatPage({
     openedFolders,
   } = useChatContext();
   const filteredAssistants = orderAssistantsForUser(availablePersonas, user);
+  const [scrollingCancelled, setScrollingCancelled] = useState(false);
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -402,11 +404,31 @@ export function ChatPage({
 
   // auto scroll as message comes out
   const scrollableDivRef = useRef<HTMLDivElement>(null);
+  const lastMessageRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLDivElement>(null);
   const endDivRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (isStreaming || !message) {
-      handleAutoScroll(endDivRef, scrollableDivRef);
+    // new auto scroll GPT Style
+    if (
+      lastMessageRef &&
+      inputRef &&
+      inputRef.current &&
+      lastMessageRef.current
+    ) {
+      const lastMessageRect = lastMessageRef.current.getBoundingClientRect();
+      const endDivRect = inputRef.current.getBoundingClientRect();
+
+      if (endDivRect.bottom - lastMessageRect.bottom > 140) {
+        if (endDivRef && endDivRef?.current) {
+          endDivRef?.current.scrollIntoView({ behavior: "smooth" });
+        }
+      }
     }
+
+    // old version
+    // if (isStreaming || !message {
+    //   handleAutoScroll(endDivRef, scrollableDivRef);
+    // }
   });
 
   // scroll to bottom initially
@@ -475,6 +497,7 @@ export function ChatPage({
     forceSearch?: boolean;
     isSeededChat?: boolean;
   } = {}) => {
+    setScrollingCancelled(true);
     let currChatSessionId: number;
     let isNewSession = chatSessionId === null;
     const searchParamBasedChatSessionName =
@@ -1020,101 +1043,210 @@ export function ChatPage({
                                 i === messageHistory.length - 1);
                             const previousMessage =
                               i !== 0 ? messageHistory[i - 1] : null;
-                            return (
-                              <AIMessage
-                                key={message.messageId}
-                                messageId={message.messageId}
-                                content={message.message}
-                                files={message.files}
-                                query={messageHistory[i]?.query || undefined}
-                                personaName={livePersona.name}
-                                citedDocuments={getCitedDocumentsFromMessage(
-                                  message
-                                )}
-                                currentTool={currentTool}
-                                isComplete={
-                                  i !== messageHistory.length - 1 ||
-                                  !isStreaming
-                                }
-                                hasDocs={
-                                  (message.documents &&
-                                    message.documents.length > 0) === true
-                                }
-                                handleFeedback={
-                                  i === messageHistory.length - 1 && isStreaming
-                                    ? undefined
-                                    : (feedbackType) =>
-                                        setCurrentFeedback([
-                                          feedbackType,
-                                          message.messageId as number,
-                                        ])
-                                }
-                                handleSearchQueryEdit={
-                                  i === messageHistory.length - 1 &&
-                                  !isStreaming
-                                    ? (newQuery) => {
-                                        if (!previousMessage) {
-                                          setPopup({
-                                            type: "error",
-                                            message:
-                                              "Cannot edit query of first message - please refresh the page and try again.",
-                                          });
-                                          return;
-                                        }
 
-                                        if (
-                                          previousMessage.messageId === null
-                                        ) {
-                                          setPopup({
-                                            type: "error",
-                                            message:
-                                              "Cannot edit query of a pending message - please wait a few seconds and try again.",
-                                          });
-                                          return;
+                            if (i == messageHistory.length - 1) {
+                              return (
+                                <div key={i} ref={lastMessageRef}>
+                                  <AIMessage
+                                    key={message.messageId}
+                                    messageId={message.messageId}
+                                    content={message.message}
+                                    files={message.files}
+                                    query={
+                                      messageHistory[i]?.query || undefined
+                                    }
+                                    personaName={livePersona.name}
+                                    citedDocuments={getCitedDocumentsFromMessage(
+                                      message
+                                    )}
+                                    currentTool={currentTool}
+                                    isComplete={
+                                      i !== messageHistory.length - 1 ||
+                                      !isStreaming
+                                    }
+                                    hasDocs={
+                                      (message.documents &&
+                                        message.documents.length > 0) === true
+                                    }
+                                    handleFeedback={
+                                      i === messageHistory.length - 1 &&
+                                      isStreaming
+                                        ? undefined
+                                        : (feedbackType) =>
+                                            setCurrentFeedback([
+                                              feedbackType,
+                                              message.messageId as number,
+                                            ])
+                                    }
+                                    handleSearchQueryEdit={
+                                      i === messageHistory.length - 1 &&
+                                      !isStreaming
+                                        ? (newQuery) => {
+                                            if (!previousMessage) {
+                                              setPopup({
+                                                type: "error",
+                                                message:
+                                                  "Cannot edit query of first message - please refresh the page and try again.",
+                                              });
+                                              return;
+                                            }
+
+                                            if (
+                                              previousMessage.messageId === null
+                                            ) {
+                                              setPopup({
+                                                type: "error",
+                                                message:
+                                                  "Cannot edit query of a pending message - please wait a few seconds and try again.",
+                                              });
+                                              return;
+                                            }
+                                            onSubmit({
+                                              messageIdToResend:
+                                                previousMessage.messageId,
+                                              queryOverride: newQuery,
+                                            });
+                                          }
+                                        : undefined
+                                    }
+                                    isCurrentlyShowingRetrieved={
+                                      isShowingRetrieved
+                                    }
+                                    handleShowRetrieved={(messageNumber) => {
+                                      if (isShowingRetrieved) {
+                                        setSelectedMessageForDocDisplay(null);
+                                      } else {
+                                        if (messageNumber !== null) {
+                                          setSelectedMessageForDocDisplay(
+                                            messageNumber
+                                          );
+                                        } else {
+                                          setSelectedMessageForDocDisplay(-1);
                                         }
+                                      }
+                                    }}
+                                    handleForceSearch={() => {
+                                      if (
+                                        previousMessage &&
+                                        previousMessage.messageId
+                                      ) {
                                         onSubmit({
                                           messageIdToResend:
                                             previousMessage.messageId,
-                                          queryOverride: newQuery,
+                                          forceSearch: true,
+                                        });
+                                      } else {
+                                        setPopup({
+                                          type: "error",
+                                          message:
+                                            "Failed to force search - please refresh the page and try again.",
                                         });
                                       }
-                                    : undefined
-                                }
-                                isCurrentlyShowingRetrieved={isShowingRetrieved}
-                                handleShowRetrieved={(messageNumber) => {
-                                  if (isShowingRetrieved) {
-                                    setSelectedMessageForDocDisplay(null);
-                                  } else {
-                                    if (messageNumber !== null) {
-                                      setSelectedMessageForDocDisplay(
-                                        messageNumber
-                                      );
+                                    }}
+                                    retrievalDisabled={retrievalDisabled}
+                                  />
+                                </div>
+                              );
+                            } else {
+                              return (
+                                <AIMessage
+                                  key={message.messageId}
+                                  messageId={message.messageId}
+                                  content={message.message}
+                                  files={message.files}
+                                  query={messageHistory[i]?.query || undefined}
+                                  personaName={livePersona.name}
+                                  citedDocuments={getCitedDocumentsFromMessage(
+                                    message
+                                  )}
+                                  currentTool={currentTool}
+                                  isComplete={
+                                    i !== messageHistory.length - 1 ||
+                                    !isStreaming
+                                  }
+                                  hasDocs={
+                                    (message.documents &&
+                                      message.documents.length > 0) === true
+                                  }
+                                  handleFeedback={
+                                    i === messageHistory.length - 1 &&
+                                    isStreaming
+                                      ? undefined
+                                      : (feedbackType) =>
+                                          setCurrentFeedback([
+                                            feedbackType,
+                                            message.messageId as number,
+                                          ])
+                                  }
+                                  handleSearchQueryEdit={
+                                    i === messageHistory.length - 1 &&
+                                    !isStreaming
+                                      ? (newQuery) => {
+                                          if (!previousMessage) {
+                                            setPopup({
+                                              type: "error",
+                                              message:
+                                                "Cannot edit query of first message - please refresh the page and try again.",
+                                            });
+                                            return;
+                                          }
+
+                                          if (
+                                            previousMessage.messageId === null
+                                          ) {
+                                            setPopup({
+                                              type: "error",
+                                              message:
+                                                "Cannot edit query of a pending message - please wait a few seconds and try again.",
+                                            });
+                                            return;
+                                          }
+                                          onSubmit({
+                                            messageIdToResend:
+                                              previousMessage.messageId,
+                                            queryOverride: newQuery,
+                                          });
+                                        }
+                                      : undefined
+                                  }
+                                  isCurrentlyShowingRetrieved={
+                                    isShowingRetrieved
+                                  }
+                                  handleShowRetrieved={(messageNumber) => {
+                                    if (isShowingRetrieved) {
+                                      setSelectedMessageForDocDisplay(null);
                                     } else {
-                                      setSelectedMessageForDocDisplay(-1);
+                                      if (messageNumber !== null) {
+                                        setSelectedMessageForDocDisplay(
+                                          messageNumber
+                                        );
+                                      } else {
+                                        setSelectedMessageForDocDisplay(-1);
+                                      }
                                     }
-                                  }
-                                }}
-                                handleForceSearch={() => {
-                                  if (
-                                    previousMessage &&
-                                    previousMessage.messageId
-                                  ) {
-                                    onSubmit({
-                                      messageIdToResend:
-                                        previousMessage.messageId,
-                                      forceSearch: true,
-                                    });
-                                  } else {
-                                    setPopup({
-                                      type: "error",
-                                      message:
-                                        "Failed to force search - please refresh the page and try again.",
-                                    });
-                                  }
-                                }}
-                                retrievalDisabled={retrievalDisabled}
-                              />
-                            );
+                                  }}
+                                  handleForceSearch={() => {
+                                    if (
+                                      previousMessage &&
+                                      previousMessage.messageId
+                                    ) {
+                                      onSubmit({
+                                        messageIdToResend:
+                                          previousMessage.messageId,
+                                        forceSearch: true,
+                                      });
+                                    } else {
+                                      setPopup({
+                                        type: "error",
+                                        message:
+                                          "Failed to force search - please refresh the page and try again.",
+                                      });
+                                    }
+                                  }}
+                                  retrievalDisabled={retrievalDisabled}
+                                />
+                              );
+                            }
                           } else {
                             return (
                               <div key={i}>
@@ -1203,8 +1335,24 @@ export function ChatPage({
                         <div ref={endDivRef} />
                       </div>
                     </div>
+                    {/* <Button onClick={() => {
+                      if (lastMessageRef && inputRef && inputRef.current && lastMessageRef.current) {
+                        const lastMessageRect = lastMessageRef.current.getBoundingClientRect();
+                        const endDivRect = inputRef.current.getBoundingClientRect();
 
-                    <div className="absolute bottom-0 z-10 w-full">
+                        console.log(endDivRect.bottom - lastMessageRect.bottom)
+
+                      }
+                    }
+
+                    }>
+                      test
+                    </Button> */}
+
+                    <div
+                      ref={inputRef}
+                      className="absolute bottom-0 z-10 w-full"
+                    >
                       <div className="w-full pb-4">
                         <ChatInputBar
                           message={message}
