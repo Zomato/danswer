@@ -320,7 +320,7 @@ export function ChatPage({
   const [currentTool, setCurrentTool] = useState<string | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
 
-  // uploaded files
+  // uploaded the files
   const [currentMessageFiles, setCurrentMessageFiles] = useState<
     FileDescriptor[]
   >([]);
