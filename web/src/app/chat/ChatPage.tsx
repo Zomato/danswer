@@ -45,6 +45,7 @@ import {
   useInitialScroll,
   useLlmOverride,
   useResponsiveScroll,
+  useResponsiveScroll2,
 } from "@/lib/hooks";
 import { computeAvailableFilters } from "@/lib/filters";
 import { FeedbackType } from "./types";
@@ -412,6 +413,7 @@ export function ChatPage({
     useState<boolean>(false);
 
   // auto scroll as message comes out
+  const extraDivRef = useRef<HTMLDivElement>(null);
   const scrollableDivRef = useRef<HTMLDivElement>(null);
   const lastMessageRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLDivElement>(null);
@@ -444,7 +446,7 @@ export function ChatPage({
     lastMessageRef,
     inputRef,
     endDivRef,
-    distance: -100,
+    distance: -250,
   });
 
   // Scroll if necessary for initial message
@@ -456,11 +458,19 @@ export function ChatPage({
   });
 
   // Scroll if input bar covers bottom of message history
-  useResponsiveScroll({
+  // useResponsiveScroll({
+  //   lastMessageRef,
+  //   inputRef,
+  //   endDivRef,
+  //   textAreaRef,
+  // });
+
+  useResponsiveScroll2({
     lastMessageRef,
     inputRef,
     endDivRef,
     textAreaRef,
+    extraDivRef,
   });
 
   // used for resizing of the document sidebar
@@ -1274,7 +1284,8 @@ export function ChatPage({
                             );
                           }
                         })}
-                        <div className="h-[50px]" />
+
+                        <div ref={extraDivRef} className="h-[150px]" />
                         {isStreaming &&
                           messageHistory.length > 0 &&
                           messageHistory[messageHistory.length - 1].type ===
