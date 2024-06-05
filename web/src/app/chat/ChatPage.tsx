@@ -25,7 +25,6 @@ import {
   getCitedDocumentsFromMessage,
   getHumanAndAIMessageFromMessageNumber,
   getLastSuccessfulMessageId,
-  handleAutoScroll,
   handleChatFeedback,
   nameChatSession,
   personaIncludesRetrieval,
@@ -41,11 +40,11 @@ import { usePopup } from "@/components/admin/connectors/Popup";
 import { SEARCH_PARAM_NAMES, shouldSubmitOnLoad } from "./searchParams";
 import { useDocumentSelection } from "./useDocumentSelection";
 import {
-  useAutoScrollOnMessage,
+  useScrollOnStream,
   useFilters,
   useInitialScroll,
   useLlmOverride,
-  useResponsiveAutoScroll,
+  useResponsiveScroll,
 } from "@/lib/hooks";
 import { computeAvailableFilters } from "@/lib/filters";
 import { FeedbackType } from "./types";
@@ -418,6 +417,7 @@ export function ChatPage({
   const endDivRef = useRef<HTMLDivElement>(null);
 
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
+
   useEffect(() => {
     const textarea = textAreaRef.current;
     if (textarea) {
@@ -438,7 +438,7 @@ export function ChatPage({
   };
 
   // Scroll on stream if within the "gap"
-  useAutoScrollOnMessage({
+  useScrollOnStream({
     isStreaming,
     lastMessageRef,
     inputRef,
@@ -456,7 +456,7 @@ export function ChatPage({
   });
 
   // Scroll if input bar covers bottom of message history
-  useResponsiveAutoScroll({
+  useResponsiveScroll({
     lastMessageRef,
     inputRef,
     endDivRef,
