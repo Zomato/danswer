@@ -416,6 +416,7 @@ export function ChatPage({
   const lastMessageRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLDivElement>(null);
   const endDivRef = useRef<HTMLDivElement>(null);
+  const endPaddingRef = useRef<HTMLDivElement>(null);
 
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -469,6 +470,7 @@ export function ChatPage({
     lastMessageRef,
     inputRef,
     endDivRef,
+    endPaddingRef,
     textAreaRef,
   });
 
@@ -1314,7 +1316,7 @@ export function ChatPage({
                               />
                             </div>
                           )}
-
+                        <div ref={endPaddingRef} className="" />
                         <div ref={endDivRef} className="" />
                         {livePersona &&
                           livePersona.starter_messages &&
