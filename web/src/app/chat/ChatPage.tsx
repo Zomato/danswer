@@ -44,7 +44,7 @@ import {
   useFilters,
   useInitialScroll,
   useLlmOverride,
-  useResponsiveScroll2,
+  useResponsiveScroll,
 } from "@/lib/hooks";
 import { computeAvailableFilters } from "@/lib/filters";
 import { FeedbackType } from "./types";
@@ -464,14 +464,8 @@ export function ChatPage({
   });
 
   // Scroll if input bar covers bottom of message history
-  // useResponsiveScroll({
-  //   lastMessageRef,
-  //   inputRef,
-  //   endDivRef,
-  //   textAreaRef,
-  // });
 
-  useResponsiveScroll2({
+  useResponsiveScroll({
     lastMessageRef,
     inputRef,
     endDivRef,
@@ -683,6 +677,8 @@ export function ChatPage({
           }
         }
         const updateFn = (messages: Message[]) => {
+          console.log(messages);
+
           const replacementsMap = finalMessage
             ? new Map([
                 [messages[0].messageId, TEMP_USER_MESSAGE_ID],
@@ -699,6 +695,7 @@ export function ChatPage({
           finalMessage?.parent_message || TEMP_USER_MESSAGE_ID;
         const newAssistantMessageId =
           finalMessage?.message_id || TEMP_ASSISTANT_MESSAGE_ID;
+
         updateFn([
           {
             messageId: newUserMessageId,
@@ -1297,7 +1294,6 @@ export function ChatPage({
                           messageHistory[messageHistory.length - 1].type ===
                             "user" && (
                             <div key={messageHistory.length}>
-                              {messageHistory.length}
                               <AIMessage
                                 messageId={null}
                                 personaName={livePersona.name}
