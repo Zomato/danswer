@@ -102,8 +102,6 @@ export function ChatPage({
   const filteredAssistants = orderAssistantsForUser(availablePersonas, user);
   const [aboveHorizon, setAboveHorizon] = useState(false);
 
-  const [scrollingCancelled, setScrollingCancelled] = useState(false);
-
   const router = useRouter();
   const searchParams = useSearchParams();
   const existingChatIdRaw = searchParams.get("chatId");
@@ -548,7 +546,7 @@ export function ChatPage({
     isSeededChat?: boolean;
   } = {}) => {
     clientScrollToBottom();
-    setScrollingCancelled(true);
+
     let currChatSessionId: number;
     let isNewSession = chatSessionId === null;
     const searchParamBasedChatSessionName =
@@ -789,17 +787,13 @@ export function ChatPage({
       //   urlChatSessionId.current === null
       // ) {
 
-      const newUrl = buildChatUrl(searchParams, currChatSessionId, null);
-      window.history.pushState(
-        { ...window.history.state, as: newUrl, url: newUrl },
-        "",
-        newUrl
-      );
+      // const newUrl = buildChatU
+      // router.replace(window.location.pathname, {scroll:}, { shallow: true })
 
       // Previous method
-      // router.push(buildChatUrl(searchParams, currChatSessionId, null), {
-      //   scroll: false,
-      // },);
+      router.replace(buildChatUrl(searchParams, currChatSessionId, null), {
+        scroll: false,
+      });
       // }
     }
     if (
@@ -908,7 +902,7 @@ export function ChatPage({
   const clientScrollToBottom = () => {
     setTimeout(() => {
       endDivRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, 200);
+    }, 300);
   };
 
   useEffect(() => {
@@ -1269,22 +1263,7 @@ export function ChatPage({
                             </div>
                           )}
 
-                        {/* <button onClick={() => {
-                          const scrollDistance =
-                            endDivRef?.current?.getBoundingClientRect()?.top! -
-                            inputRef?.current?.getBoundingClientRect()?.top!;
-
-                          console.log(scrollDistance
-                          )
-                        }}>
-
-
-
-                        </button> */}
-                        <div
-                          ref={endPaddingRef}
-                          className="bg-black h-[50px]"
-                        />
+                        <div ref={endPaddingRef} className=" h-[95px]" />
                         <div ref={endDivRef} className="bg-red-200"></div>
 
                         {livePersona &&
